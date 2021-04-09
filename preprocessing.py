@@ -157,8 +157,8 @@ def generate_data(X_file, X_t_file, y_file, y_t_file):
 """
 def get_label_weights(training_X, training_y):
     label_weights = class_weight.compute_class_weight('balanced', np.unique(training_y), training_y.ravel())
-    class_weights = {i:class_weights[i] for i in range(len(class_weights))}
-    return class_weights
+    label_weights = {i:label_weights[i] for i in range(len(label_weights))}
+    return label_weights
 
 """
     Perform one-hot encoding of the data to feed into our model.
