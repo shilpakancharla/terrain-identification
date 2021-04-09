@@ -19,7 +19,7 @@ from evaluation import f1, precision_measure, recall_measure
     @return LSTM model
 """
 
-def define_LSTM_model(dropout_rate = 0.1, l1_value = 2**-5, l2_value = 2**-5, training_X, training_y):
+def define_LSTM_model(training_X, training_y, dropout_rate = 0.1, l1_value = 2**-5, l2_value = 2**-5):
     n_timesteps, n_features, n_outputs = training_X.shape[1], training_X.shape[2], training_y.shape[1]
     initializer = tf.keras.initializers.Orthogonal()
     model = Sequential()
