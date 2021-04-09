@@ -4,7 +4,7 @@ import pandas as pd
 import tensorflow as tf
 import statistics as st
 from scipy import stats
-from imblearn.over_sampling import RandomOverSampler
+from sklearn.utils import class_weight
 from sklearn.preprocessing import RobustScaler, OneHotEncoder
 
 """
@@ -149,17 +149,16 @@ def generate_data(X_file, X_t_file, y_file, y_t_file):
     return np.concatenate(all_X), np.concatenate(all_y)
 
 """
-    We generate new samples of the minority classes to counter the class imbalance. In order to do this, we use
-    random oversampling.
+    We handle the data imbalance by assign higher weights to minority classes.
 
     @param training_X: training X data
     @param training_y: labels for training data
-    @return randomly oversampled training data and labels
+    @return dictionary of labels as key and weights as values
 """
-def random_oversampling(training_X, training_y):
-    ros = RandomOverSampler(random_state = 42)
-    X_ros, y_ros = ros.fit_resample(training_X, training_y)
-    return X_ros, y_ros
+def get_label_weights(training_X, training_y):
+    label_weights = class_weight.compute_class_weight('balanced', np.unique(training_y), training_y.ravel())
+    class_weights = {i:class_weights[i] for i in range(len(class_weights))}
+    return class_weights
 
 """
     Perform one-hot encoding of the data to feed into our model.
