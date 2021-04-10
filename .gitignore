@@ -6,3 +6,7 @@
 /__pycache__
 training_X.npy
 training_y.npy
+val_X.npy
+val_y.npy
+test_X.npy
+test_y.npy
