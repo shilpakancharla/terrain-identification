@@ -5,7 +5,7 @@ import tensorflow as tf
 import statistics as st
 from scipy import stats
 from sklearn.utils import class_weight
-from sklearn.preprocessing import RobustScaler, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 """
     Based on the training data given, we are able to extract 7 attributes:
@@ -22,7 +22,7 @@ from sklearn.preprocessing import RobustScaler, OneHotEncoder
     
     @param x_file: contains the xyz accelerometers and xyz gyroscope measures from the lower limb
     @param y_file: contain the labels for the accelerometer and gyroscope measures
-    @return dataframe of 7 attributes mentioned
+    @return dataframe of input and dataframe of extrapolated labels to match number of inputs
 """
 def upsampling(X_file, y_file):
     # Read in both CSV files
@@ -35,6 +35,7 @@ def upsampling(X_file, y_file):
         # Get the label, add it four times
         extrapolated_labels += [label[1][0]] * 4
     
+    # Create a dataframe, not series, so that you get the shapes - keep consistent
     extrapolated_labels_df = pd.DataFrame(extrapolated_labels)
     # X and extrapolated labels may not be the same length - account for differences here
     difference = df_X.shape[0] - extrapolated_labels_df.shape[0]
@@ -43,26 +44,28 @@ def upsampling(X_file, y_file):
     return df_X, extrapolated_labels_df
 
 """
-    Scale the values of X to make it robust to outliers.
+    Scale the values of X to make it robust to outliers. We convert our dataframe to a numpy array as this makes it easier to create a
+    three-dimensional array of inputs to pass into our model.
     
     @param df: input dataframe
     @param columns: columns to scale
-    @return scaled dataframe
+    @return scaled array of input values
 """
 def scale_data(df, columns):
-    scaler = RobustScaler()
+    scaler = StandardScaler()
     scaler = scaler.fit(df[columns])
-    df.loc[:, columns] = scaler.transform(df[columns])
-    return df
+    df.loc[:, columns] = scaler.transform(df[columns].to_numpy())
+    return df # Although called a dataframe, this is an array that gets returned
 
 """
-    Takes in the sequential X and y and creates windows of time-series data.
+    Takes in the sequential X and y and creates windows of time-series data. We take the mode of the labels to create each instances
+    of the y_values.
     
-    @param X: input data
-    @param y: label data
+    @param X: input data (dataframe structure)
+    @param y: label data (dataframe structure)
     @param time_steps: determines size of window
-    @param step: incremental value that window will slide over
-    @return time series of X and y data
+    @param step_size: incremental value that window will slide over
+    @return time series of X and y data in numpy.ndarrays
 """
 def mode_labels(X, y, time_step, step_size):
     X_values = []
@@ -75,24 +78,25 @@ def mode_labels(X, y, time_step, step_size):
     return np.array(X_values), np.array(y_values).reshape(-1, 1)
 
 """
-    Generating data frames from training data.
+    Using the sliding window technique to generate time series data of shape (number of samples, window size, number of features). We
+    combine all the data passed in as lists of X and y files to create this.
     
-    @param X_file: list of input X files
-    @param X_t_file: list of input X_time files
-    @param y_file: list of input y files
-    @param y_t file: list of y_time files
+    @param X_files: list of input X files
+    @param y_files: list of input y files files
+    @param time_steps: determines size of window
+    @param step_size: incremental value that window will slide over
     @return stacked window of instances across all training files, stack window of labels across all label files
 """
 def create_time_series_data(X_files, y_files, time_step, step_size):
-    all_X = []
-    all_y = []
+    aggregate_X = []
+    aggregate_y = []
     for i in range(len(y_files)):
         X, y = upsampling(X_files[i], y_files[i])
         X = scale_data(X, list(X.columns.values))
         X, y = mode_labels(X, y, time_step, step_size)
-        all_X.append(X)
-        all_y.append(y)
-    return np.concatenate(all_X), np.concatenate(all_y)
+        aggregate_X.append(X)
+        aggregate_y.append(y)
+    return np.concatenate(aggregate_X), np.concatenate(aggregate_y)
 
 """
     We handle the data imbalance by assign higher weights to minority classes.

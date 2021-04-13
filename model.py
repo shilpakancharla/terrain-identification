@@ -1,21 +1,17 @@
 import numpy as np 
 import tensorflow as tf
-from keras.models import Sequential
+from keras.models import Sequential, model_from_yaml
 from keras.layers import Dense, Dropout, Bidirectional, LSTM
 from tensorflow.python.keras import regularizers
 from sklearn.metrics import classification_report
 
 """
     Function to create model.
-    
-    @param dropout_rate: optimal dropout value
-    @param l1_value: optimal L1 regularization value
-    @param l2_value: optimal L2 regularization value
+
     @param training_X: training data
     @param training_y_encoded: one-hot encoded training labels
-    @return LSTM model
+    @return bidrectional LSTM model
 """
-
 def define_BiLSTM_model(training_X, training_y_encoded):
     n_timesteps, n_features, n_outputs = training_X.shape[1], training_X.shape[2], training_y_encoded.shape[1]
     model = Sequential()
@@ -26,8 +22,35 @@ def define_BiLSTM_model(training_X, training_y_encoded):
     model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['acc', f1, precision_measure, recall_measure])
     return model
 
+"""
+    Save the model as a yaml file; and save the weights from the model.
+
+    @param model: trained model to save
+"""
 def save_model(model):
-    return
+    model_yaml = model.to_yaml()
+    with open('model.yaml', 'w') as yaml_file:
+        yaml_file.write(model_yaml)
+    # Serialize weights to HDF5
+    model.save_weights('model.h5')
+    print('Saved model to disk.')
+
+"""
+    Load the saved model.
+
+    @param model_file_name: name of file that model was saved in
+    @param weight_file_name: name of file that weights were saved in
+    @return loaded model
+"""
+def load_model(model_file_name, weight_file_name):
+    yaml_file = open(model_file_name, 'r')
+    loaded_model_yaml = yaml_file.read()
+    yaml_file.close()
+    loaded_model = model_from_yaml(loaded_model_yaml)
+    # Load weights into new model
+    loaded_model.load_weights(weight_file_name)
+    print('Loaded model from disk.')
+    return loaded_model
 
 """
     Performs a search of the most optimal hyperparameters.
