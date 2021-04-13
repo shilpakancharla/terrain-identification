@@ -86,3 +86,17 @@ def plot_history(history):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Validation'])
     plt.show()
+
+def create_dataset(X, time_steps, step):
+    X_values = []
+    for i in range(0, len(X) - time_steps, step):
+        value = X.iloc[i:(i + time_steps)].values
+        X_values.append(value)        
+    return np.array(X_values)
+
+def get_majority(y):
+    y_out = []
+    for i in range(0, y.shape[0], 4):
+        a = list(y[i:i+4])
+        y_out.append(max(a, key = a.count))
+    return np.array(y_out)

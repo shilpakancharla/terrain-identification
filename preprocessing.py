@@ -15,20 +15,32 @@ from sklearn.preprocessing import RobustScaler, OneHotEncoder
     4. x gyroscope measurement
     5. y gyroscope measurement
     6. z gyroscope measurement
-    7. time stamp for accelerometer and gyroscope measures
     
-    We start by creating a dataframe using the csv files provided for readability.
+    We start by creating a dataframe using the csv files provided for readability. Since the sampling rates for the input data are
+    at 40 Hz while the sampling rate for the labels is 10 Hz, we extrapolate 4 labels to match the sampling rate of the input data.
+    We consider this up sampling.
     
     @param x_file: contains the xyz accelerometers and xyz gyroscope measures from the lower limb
-    @param x_time_file: contain the time stamps for the accelerometer and gyroscope measures
+    @param y_file: contain the labels for the accelerometer and gyroscope measures
     @return dataframe of 7 attributes mentioned
 """
-def create_dataframe_X(x_file, y_file):
-    df_x = pd.read_csv(x_file, sep = ',', names = ['X_acc', 'Y_acc', 'Z_acc', 'X_gyr', 'Y_gyr', 'Z_gyr'])
-    df_y = pd.read_csv(x_time_file)
-    frames = [df1, df2]
-    result = pd.concat(frames, axis = 1)
-    return result
+def upsampling(X_file, y_file):
+    # Read in both CSV files
+    df_X = pd.read_csv(X_file)
+    df_y = pd.read_csv(y_file)
+    
+    extrapolated_labels = []
+    # Iterate through every item (row) of the y labels
+    for label in df_y.iterrows():
+        # Get the label, add it four times
+        extrapolated_labels += [label[1][0]] * 4
+    
+    extrapolated_labels_df = pd.DataFrame(extrapolated_labels)
+    # X and extrapolated labels may not be the same length - account for differences here
+    difference = df_X.shape[0] - extrapolated_labels_df.shape[0]
+    df_X = df_X.iloc[:-difference,:]
+    
+    return df_X, extrapolated_labels_df
 
 """
     Scale the values of X to make it robust to outliers.
@@ -42,68 +54,6 @@ def scale_data(df, columns):
     scaler = scaler.fit(df[columns])
     df.loc[:, columns] = scaler.transform(df[columns])
     return df
-    
-"""
-    We have both the labels and the time stamps for the labels. We create a dataframe from these for
-    readability.
-    
-    @param y_file: contain the labels: 
-        (0) indicates standing or walking in solid ground, 
-        (1) indicates going down the stairs, 
-        (2) indicates going up the stairs, and 
-        (3) indicates walking on grass
-    @param y_time_file: contain the time stamps for the labels
-    @return dataframe of labels and time stamps
-""" 
-def create_dataframe_Y(y_file, y_time_file):
-    df1 = pd.read_csv(y_file, names = ['Label'])
-    df2 = pd.read_csv(y_time_file, names = ['Time stamp'])
-    frames = [df1, df2]
-    result = pd.concat(frames, axis = 1)
-    return result
-    
-"""
-    We take the outputs of create_dataframe_X and create_dataframe_Y. In order to combine both of these
-    dataframes, we need look at the time intervals present for when the labels were assigned. We down-sample
-    the X to the shape of the y.
-    
-    @param x_frame: dataframe from create_dataframe_X
-    @param y_frame: dataframe from create_dataframe_Y
-    @return dataframe with 9 columns (8 attributes and 1 label)
-"""
-def combine_frames(x_frame, y_frame):
-    # Change each dataframe column to a list for iterations
-    time_stamp_y = y_frame['Time stamp'].tolist()
-    time_stamp_x = x_frame['Time stamp'].tolist()
-    
-    x_range = [] # Empty list to append data points to
-    x_random_row = 0 # Initializing variable to hold randomly selected row instance
-    refs = []
-    count = 0
-    for i in range(0, len(time_stamp_y)):
-        while (time_stamp_x[count] <= time_stamp_y[i]) and (count <= len(time_stamp_x)):
-            x_range.append(time_stamp_x.index(time_stamp_x[count]))
-            count += 1
-        x_random_row = random.choice(x_range) # Pick a random value
-        refs.append(x_random_row) # Keep record of selected rows
-        x_range.clear() # Clear the cache
-        continue
-    
-    # Create a new dataframe based on the refs collected - should be roughly the same length as the y_frame
-    entries = []
-    for item in refs:
-        entry = x_frame.iloc[item]
-        entries.append(entry)
-    
-    found_df = pd.concat(entries, axis = 1)
-    found_df = found_df.transpose()
-    
-    # Combine found_df with y_frame for downsampling
-    found_df = found_df.reset_index()
-    found_df = found_df.drop(['index'], axis = 1)
-    found_df = found_df.drop(['Time stamp'], axis = 1)
-    combined_frame = pd.concat([found_df, y_frame], axis = 1)
-    return combined_frame
 
 """
     Takes in the sequential X and y and creates windows of time-series data.
@@ -114,12 +64,12 @@ def combine_frames(x_frame, y_frame):
     @param step: incremental value that window will slide over
     @return time series of X and y data
 """
-def mode_labels(X, y, time_steps, step):
+def mode_labels(X, y, time_step, step_size):
     X_values = []
     y_values = []
-    for i in range(0, len(X) - time_steps, step):
-        value = X.iloc[i:(i + time_steps)].values
-        labels = y.iloc[i: (i + time_steps)]
+    for i in range(0, len(X) - time_step, step_size):
+        value = X.iloc[i:(i + time_step)].values
+        labels = y.iloc[i:(i + time_step)]
         X_values.append(value)
         y_values.append(stats.mode(labels)[0][0])
     return np.array(X_values), np.array(y_values).reshape(-1, 1)
@@ -133,16 +83,13 @@ def mode_labels(X, y, time_steps, step):
     @param y_t file: list of y_time files
     @return stacked window of instances across all training files, stack window of labels across all label files
 """
-def generate_data(X_file, X_t_file, y_file, y_t_file):
+def create_time_series_data(X_files, y_files, time_step, step_size):
     all_X = []
     all_y = []
-    for item_X, item_X_t, item_y, item_y_t in zip(X_file, X_t_file, y_file, y_t_file):
-        df_x = create_dataframe_X(item_X, item_X_t)
-        df_y = create_dataframe_Y(item_y, item_y_t)
-        combined_frame = combine_frames(df_x, df_y)
-        X_temp = combined_frame[['X_acc', 'Y_acc', 'Z_acc', 'X_gyr', 'Y_gyr', 'Z_gyr']]
-        y_temp = combined_frame['Label']
-        X, y = mode_labels(X_temp, y_temp, 30, 1)
+    for i in range(len(y_files)):
+        X, y = upsampling(X_files[i], y_files[i])
+        X = scale_data(X, list(X.columns.values))
+        X, y = mode_labels(X, y, time_step, step_size)
         all_X.append(X)
         all_y.append(y)
     return np.concatenate(all_X), np.concatenate(all_y)

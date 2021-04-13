@@ -6,7 +6,7 @@ from tensorflow.python.keras import regularizers
 from sklearn.metrics import classification_report
 
 """
-    Function to create model. Required for KerasClassifier.
+    Function to create model.
     
     @param dropout_rate: optimal dropout value
     @param l1_value: optimal L1 regularization value
@@ -16,14 +16,18 @@ from sklearn.metrics import classification_report
     @return LSTM model
 """
 
-def define_LSTM_model(training_X, training_y, dropout_rate, l1_value, l2_value):
-    n_timesteps, n_features, n_outputs = training_X.shape[1], training_X.shape[2], training_y.shape[1]
+def define_BiLSTM_model(training_X, training_y_encoded):
+    n_timesteps, n_features, n_outputs = training_X.shape[1], training_X.shape[2], training_y_encoded.shape[1]
     model = Sequential()
-    model.add(Bidirectional(LSTM(units = 75, batch_input_shape = (n_timesteps, n_features))))
-    model.add(Dense(units = 75, activation = 'tanh'))
-    model.add(Dropout(rate = dropout_rate))
-    model.add(Dense(units = n_outputs, activation = 'softmax'))
+    model.add(Bidirectional(LSTM(units = 125), input_shape = (n_timesteps, n_features)))
+    model.add(Dropout(rate = 0.5))
+    model.add(Dense(units = 125, activation = 'relu'))
+    model.add(Dense(n_outputs, activation = 'softmax'))
+    model.compile(loss = 'categorical_crossentropy', optimizer = 'adam', metrics = ['acc', f1, precision_measure, recall_measure])
     return model
+
+def save_model(model):
+    return
 
 """
     Performs a search of the most optimal hyperparameters.
