@@ -23,10 +23,9 @@ from sklearn.preprocessing import RobustScaler, OneHotEncoder
     @param x_time_file: contain the time stamps for the accelerometer and gyroscope measures
     @return dataframe of 7 attributes mentioned
 """
-def create_dataframe_X(x_file, x_time_file):
-    df1 = pd.read_csv(x_file, sep = ',', names = ['X_acc', 'Y_acc', 'Z_acc', 'X_gyr', 'Y_gyr', 'Z_gyr'])
-    df1 = scale_data(df1, ['X_acc', 'Y_acc', 'Z_acc', 'X_gyr', 'Y_gyr', 'Z_gyr'])
-    df2 = pd.read_csv(x_time_file, names = ['Time stamp'])
+def create_dataframe_X(x_file, y_file):
+    df_x = pd.read_csv(x_file, sep = ',', names = ['X_acc', 'Y_acc', 'Z_acc', 'X_gyr', 'Y_gyr', 'Z_gyr'])
+    df_y = pd.read_csv(x_time_file)
     frames = [df1, df2]
     result = pd.concat(frames, axis = 1)
     return result

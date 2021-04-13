@@ -4,6 +4,7 @@
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 /__pycache__
+/processed_data
 training_X.npy
 training_y.npy
 val_X.npy
