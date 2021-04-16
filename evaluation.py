@@ -118,3 +118,17 @@ def get_mode(output):
         lst = list(output[i:i + 4])
         output_actual.append(stats.mode(lst))
     return np.array(output_actual)
+
+"""
+    Plot of sub-section of hidden test data.
+
+    @param csv_file: CSV file whose information you would like to plot
+"""
+def plot_subsection(csv_file, subject_no):
+    actual_data = pd.read_csv(csv_file)
+    plt.plot(actual_data.iloc[2000:3000])
+    plt.title('Subject {} Predictions'.format(subject_no))
+    plt.savefig('C2_predictions/subject_9_pred_subsection.png')
+
+# Driver code
+plot_subsection('C2_predictions/subject_009_01__y_prediction.csv', '9')
