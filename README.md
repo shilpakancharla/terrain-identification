@@ -15,11 +15,16 @@ This is a classification task to find different terrains from time series data. 
 * **"_y"** files contain the labels. (0) indicates standing or walking in solid ground, (1) indicates going down the stairs, (2) indicates going up the stairs, and (3) indicates walking on grass.
 * **"_y_time"** files contain the time stamps for the labels. The units are in seconds and the sampling rates is 10 Hz. 
 
-* The dataset is imbalanced. Suggestions for handling imbalance: 
-1. Make sure you create a validation set that is also balanced in order to better represent the type of testing data you will get.
+## Description of Code
 
-2. You can modify your loss function to include weights that compensate for the imbalance distributions. A quick search online would give you some hints on how to do this.
+**This project requires `tensorflow 1.8.0` and `keras 2.4.3`.**
 
-3. When doing data augmentation, you can make sure your training data is balanced by getting more replications (with some deformation / noise) for those classes that have fewer samples.
+* `preprocessing.py`: This script contains functions to do upsampling of our training data and create the time series array structure that we pass into our final bidirectional LSTM. Moreoever, it contains methods to gather the weights of each of the labels and perform one-hot encoding to the labels to pass into our model. 
+* `evaluation.py`: This script contains functions that calculate the precision, recall, and F1-score. Moreoever, we also have a function that generates plots of the training and validation classifiation measures (i.e., loss in categorical cross-entropy, accuracy, precision, recall, and the F1-score). Finally, this script also contains functions which do the post-processing steps required to create the final predictions on the hidden test set. Namely, `create_dataset` will be used to create the time-series structure that we initially passed into our model, and `get_majority` reduces the size of the output by 4 (becuase the input data is sampled at 40 Hz, and the output time stamps show that it is sampled every 10 Hz).
+* `model.py`: This script contains our final bidirectional LSTM structure. The method `hyperparameter_search` demonstrates how we initially gathered values for the dropout rate, L1 regularization multiplier, and L2 regularization multipler. Finally, there are also functions to save and load our model once it has been run. 
+* `Proj_C2_BiLSTM.ipynb`: In this notebook, we load our data, run the model (bidirectional LSTM), produce various plots shown in our paper, and generate the final predictions.
+* `Proj_C1_CNN.ipynb`: This notebook was our initial experiment in part one of this competition, in which we use a 1D-CNN.
 
-4. You can also apply a subsampling approach when creating your batches which includes all the data for the smaller datasets but selects a smaller proportion from the classes with most instances (in order to keep the number per class about the same).
+## Loading the model
+
+The model and the weights associated with it have already been saved here as `model.yaml` and `model.h5`, respecively. You can use the `load_model` function from `model.py` to pass in these two file names in order to run the model if needed. 

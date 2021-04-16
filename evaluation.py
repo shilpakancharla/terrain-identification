@@ -91,7 +91,7 @@ def plot_history(history):
     plt.show()
 
 """
-    Create a dataste for the test values similarly to how we processed the input data.
+    Create a dataset for the test values similarly to how we processed the input data.
 
     @param X: input data (dataframe structure)
     @param time_steps: determines size of window
