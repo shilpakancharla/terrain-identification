@@ -24,3 +24,7 @@ This is a classification task to find different terrains from time series data. 
 * `model.py`: This script contains our final bidirectional LSTM structure. The method `hyperparameter_search` demonstrates how we initially gathered values for the dropout rate, L1 regularization multiplier, and L2 regularization multipler. Finally, there are also functions to save and load our model once it has been run. 
 * `Proj_C2_BiLSTM.ipynb`: In this notebook, we load our data, run the model (bidirectional LSTM), produce various plots shown in our paper, and generate the final predictions.
 * `Proj_C1_CNN.ipynb`: This notebook was our initial experiment in part one of this competition, in which we use a 1D-CNN.
+
+## Loading the model
+
+The model and the weights associated with it have already been saved here as `model.yaml` and `model.h5`, respecively. You can use the `load_model` function from `model.py` to pass in these two file names in order to run the model if needed. 
