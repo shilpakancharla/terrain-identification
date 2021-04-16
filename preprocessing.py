@@ -51,11 +51,11 @@ def upsampling(X_file, y_file):
     @param columns: columns to scale
     @return scaled array of input values
 """
-def scale_data(df, columns):
+def scale_data(input_data, columns):
     scaler = StandardScaler()
-    scaler = scaler.fit(df[columns])
-    df.loc[:, columns] = scaler.transform(df[columns].to_numpy())
-    return df # Although called a dataframe, this is an array that gets returned
+    scaler = scaler.fit(input_data[columns])
+    input_data.loc[:, columns] = scaler.transform(input_data[columns].to_numpy())
+    return input_data 
 
 """
     Takes in the sequential X and y and creates windows of time-series data. We take the mode of the labels to create each instances
@@ -72,10 +72,10 @@ def mode_labels(X, y, time_step, step_size):
     y_values = []
     for i in range(0, len(X) - time_step, step_size):
         value = X.iloc[i:(i + time_step)].values
-        labels = y.iloc[i:(i + time_step)]
         X_values.append(value)
+        labels = y.iloc[i:(i + time_step)]
         y_values.append(stats.mode(labels)[0][0])
-    return np.array(X_values), np.array(y_values).reshape(-1, 1)
+    return np.array(y_values).reshape(-1, 1), np.array(X_values) 
 
 """
     Using the sliding window technique to generate time series data of shape (number of samples, window size, number of features). We

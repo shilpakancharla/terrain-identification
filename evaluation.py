@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy import stats
 from keras import backend as K
 
 """
@@ -97,7 +98,7 @@ def plot_history(history):
     @param step_size: incremental value that window will slide over
     @return time series of X in numpy.ndarray format
 """
-def create_dataset(X, time_steps, step_size):
+def create_test_dataset(X, time_steps, step_size):
     X_values = []
     for i in range(0, len(X) - time_steps, step_size):
         value = X.iloc[i:(i + time_steps)].values
@@ -111,9 +112,9 @@ def create_dataset(X, time_steps, step_size):
     @param y: output values
     @return array of output values that have been post-processed
 """
-def get_majority(output):
+def get_mode(output):
     output_actual = []
     for i in range(0, output.shape[0], 4):
-        a = list(output[i:i + 4])
-        output_actual.append(max(a, key = a.count))
+        lst = list(output[i:i + 4])
+        output_actual.append(stats.mode(lst))
     return np.array(output_actual)
